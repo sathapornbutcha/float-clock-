@@ -1,0 +1,122 @@
+/* ============================================================
+   Float Clock — เฉพาะหน้านี้ (ใช้ token ร่วมจาก ../_design-system/tokens.css)
+   ============================================================ */
+
+.page {
+  max-width: 460px;
+  margin: 0 auto;
+  padding: 28px 18px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.head { display: flex; flex-direction: column; gap: 4px; }
+
+/* ---------- การ์ดนาฬิกา (ตัวที่ลอยไป PiP) ---------- */
+.overlay-card { padding: 22px; text-align: center; }
+
+.overlay {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.clock {
+  font-size: 64px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--text-heading);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.sub-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: center; }
+.date { color: var(--text-secondary); font-size: 14px; font-weight: 500; }
+
+.timer-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text-primary);
+  background: var(--item-hover);
+  border-radius: 999px;
+  padding: 4px 12px;
+}
+.timer-chip .dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--primary);
+}
+.timer-chip.running .dot { background: #12B76A; animation: pulse 1.2s infinite; }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
+
+.pip-note { text-align: center; margin: -6px 0 0; }
+.pop-btn { width: 100%; padding: 12px; font-size: 14px; }
+
+/* ---------- ฟอร์ม ---------- */
+.sec-title { margin: 0 0 14px; font-size: 15px; }
+.field { margin-bottom: 14px; }
+.lbl { display: block; font-size: 12px; color: var(--text-secondary); margin-bottom: 8px; font-weight: 500; }
+
+.presets { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.preset { padding: 8px 14px; min-width: 44px; }
+.preset.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+.time-inputs { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+.time-inputs .num { width: 70px; text-align: center; }
+.time-inputs .unit { font-size: 13px; color: var(--text-secondary); margin-right: 6px; }
+
+.timer-actions { display: flex; gap: 8px; margin-bottom: 14px; }
+.timer-actions .btn-primary { flex: 1; }
+.timer-actions .btn { flex: 1; }
+
+.div { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+
+.check {
+  display: flex; align-items: center; gap: 9px;
+  font-size: 13px; color: var(--text-primary);
+  padding: 7px 0; cursor: pointer; user-select: none;
+}
+.check input { width: 17px; height: 17px; accent-color: var(--primary); cursor: pointer; }
+
+.foot { text-align: center; margin-top: 4px; }
+
+/* ---------- เอฟเฟกต์กระพริบเตือน ---------- */
+@keyframes alert-flash {
+  0%, 100% { background: var(--canvas); }
+  50%      { background: #FECDCA; }
+}
+body.flash { animation: alert-flash .5s ease-in-out 5; }
+
+/* ใน PiP กระพริบที่ตัวการ์ดขาว → เข้มชัด */
+body.pip-body.flash .overlay { animation: alert-flash-pip .5s ease-in-out 6; }
+@keyframes alert-flash-pip {
+  0%, 100% { background: var(--card); }
+  50%      { background: #F04438; }
+}
+
+/* ---------- โหมด PiP: การ์ดขาวมุมโค้งลอยบนพื้นเทา ---------- */
+body.pip-body {
+  margin: 0;
+  height: 100vh;
+  box-sizing: border-box;
+  padding: 8px;
+  display: flex; align-items: stretch; justify-content: stretch;
+  background: var(--canvas);
+}
+body.pip-body .overlay {
+  flex: 1;
+  gap: 6px;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+}
+body.pip-body .clock { font-size: clamp(40px, 20vw, 120px); }
+body.pip-body .date  { font-size: clamp(12px, 4vw, 18px); }

@@ -1,0 +1,95 @@
+/* ============================================================
+   Shared "Light Minimal" design tokens for web. See DESIGN.md.
+   Usage: <link rel="stylesheet" href="tokens.css">
+   ============================================================ */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  /* colors */
+  --canvas:         #F4F5F7;
+  --card:           #FFFFFF;
+  --text-heading:   #111827;
+  --text-primary:   #1F2A37;
+  --text-secondary: #98A2B3;
+  --border:         #E5E7EB;
+  --field-hover:    #F9FAFB;
+  --item-hover:     #F2F4F7;
+  --primary:        #1E2733;
+  --primary-hover:  #2A3441;
+  --danger:         #D92D20;
+
+  /* shape */
+  --radius:    14px;  /* cards */
+  --radius-md:  8px;  /* buttons / inputs */
+  --radius-sm:  6px;  /* list items */
+
+  /* elevation */
+  --shadow: 0 2px 24px rgba(15, 23, 42, 0.10);
+
+  /* type */
+  --font: 'Inter', 'Segoe UI', system-ui, sans-serif;
+}
+
+body {
+  margin: 0;
+  background: var(--canvas);
+  color: var(--text-primary);
+  font-family: var(--font);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+h1, h2, h3 { color: var(--text-heading); font-weight: 700; }
+.muted, .caption { color: var(--text-secondary); }
+.caption { font-size: 12px; }
+
+/* Floating white card */
+.card {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 26px;
+}
+
+/* Buttons */
+.btn {
+  font-family: var(--font);
+  font-size: 13px;
+  padding: 8px 16px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: background .15s, border-color .15s;
+}
+.btn:hover { background: var(--field-hover); }
+
+.btn-primary {
+  border: none;
+  border-radius: var(--radius-md);
+  background: var(--primary);
+  color: #fff;
+  font-weight: 600;
+  padding: 8px 20px;
+}
+.btn-primary:hover { background: var(--primary-hover); }
+
+/* Inputs & selects */
+.input, select, input[type="text"], input[type="number"], textarea {
+  font-family: var(--font);
+  font-size: 13px;
+  padding: 8px 10px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text-primary);
+  outline: none;
+}
+.input:focus, select:focus, input:focus, textarea:focus { border-color: var(--primary); }
+
+/* Two-tone wordmark helper:
+   <span class="wordmark"><span class="wm-pre">Mouse </span><b>Remapper</b></span> */
+.wordmark { font-size: 20px; }
+.wordmark .wm-pre { color: var(--text-secondary); font-weight: 500; }
+.wordmark b { color: var(--text-heading); font-weight: 700; }
