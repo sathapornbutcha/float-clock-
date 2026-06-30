@@ -17,8 +17,12 @@ const state = {
   timer: { running: false, endTime: 0, remainingMs: 0, totalMs: 0 },
 };
 
-let pipWindow = null;            // หน้าต่าง PiP (ถ้าเปิดอยู่)
+let pipWindow = null;            // หน้าต่าง Document-PiP (คอม Chrome/Edge)
 let audioCtx = null;
+
+// video-PiP fallback (มือถือ/iPad): วาดนาฬิกาลง canvas → stream → native video PiP
+let pipVideo = null, pipCanvas = null, pipDrawTimer = null, pipStream = null;
+let pipFlashOn = false;          // ธงกระพริบสำหรับโหมด canvas
 
 // pip-content คือ DOM ก้อนเดียวที่ย้ายไป-มา ระหว่างหน้าหลักกับ PiP
 const host = document.getElementById('pip-host');
@@ -50,32 +54,40 @@ function saveSettings() {
   }));
 }
 
-// ---- format ----
+// ---- format (helper ใช้ร่วมทั้ง DOM และ canvas-PiP) ----
 const pad = (n) => String(n).padStart(2, '0');
 
-function renderClock() {
+function getTimeStr() {
   const now = new Date();
   let h = now.getHours();
-  const m = now.getMinutes();
-  const s = now.getSeconds();
   let suffix = '';
   if (!state.format24) {
     suffix = h >= 12 ? ' PM' : ' AM';
     h = h % 12 || 12;
   }
-  let txt = `${pad(h)}:${pad(m)}`;
-  if (state.showSeconds) txt += `:${pad(s)}`;
-  q('#clock').textContent = txt + suffix;
+  let txt = `${pad(h)}:${pad(now.getMinutes())}`;
+  if (state.showSeconds) txt += `:${pad(now.getSeconds())}`;
+  return txt + suffix;
+}
 
+function getDateStr() {
+  if (!state.showDate) return '';
+  return new Date().toLocaleDateString('th-TH', { weekday: 'long', day: 'numeric', month: 'long' });
+}
+
+function getTimerStr() {
+  const t = state.timer;
+  if (t.totalMs <= 0) return '';
+  const rem = Math.max(0, Math.ceil(t.remainingMs / 1000));
+  return `${pad(Math.floor(rem / 60))}:${pad(rem % 60)}`;
+}
+
+function renderClock() {
+  q('#clock').textContent = getTimeStr();
   const dateEl = q('#date');
-  if (state.showDate) {
-    dateEl.hidden = false;
-    dateEl.textContent = now.toLocaleDateString('th-TH', {
-      weekday: 'long', day: 'numeric', month: 'long',
-    });
-  } else {
-    dateEl.hidden = true;
-  }
+  const d = getDateStr();
+  dateEl.hidden = !d;
+  if (d) dateEl.textContent = d;
 }
 
 function renderTimer() {
@@ -84,8 +96,7 @@ function renderTimer() {
   if (t.totalMs <= 0) { chip.hidden = true; return; }
   chip.hidden = false;
   chip.classList.toggle('running', t.running);
-  const rem = Math.max(0, Math.ceil(t.remainingMs / 1000));
-  q('#timer-remain').textContent = `${pad(Math.floor(rem / 60))}:${pad(rem % 60)}`;
+  q('#timer-remain').textContent = getTimerStr();
 }
 
 // ---- ลูปหลัก: อัปเดตนาฬิกา + เช็คตัวจับเวลา ทุก 250ms ----
@@ -133,6 +144,9 @@ function flashScreen() {
     b.classList.add('flash');
     setTimeout(() => b.classList.remove('flash'), 3000);
   });
+  // โหมด video-PiP (มือถือ/iPad): กระพริบบน canvas
+  pipFlashOn = true;
+  setTimeout(() => { pipFlashOn = false; }, 3000);
 }
 
 function notifyUser(msg) {
@@ -253,11 +267,24 @@ function copyStyles(target) {
   }
 }
 
+// ปุ่ม "ลอยจอ" — เลือกวิธีตามความสามารถของเบราว์เซอร์
 async function popOut() {
-  if (!('documentPictureInPicture' in window)) {
-    alert('เบราว์เซอร์นี้ยังไม่รองรับ Picture-in-Picture แบบเอกสาร\nกรุณาใช้ Chrome หรือ Edge เวอร์ชันใหม่ (เปิดผ่าน http://localhost หรือ https)');
-    return;
-  }
+  // 1) คอม Chrome/Edge → Document PiP (การ์ดเต็ม)
+  if ('documentPictureInPicture' in window) return popOutDocument();
+  // 2) มือถือ/iPad/Android → Video PiP (วาด canvas เป็นวิดีโอลอย)
+  if (canUseVideoPip()) return popOutVideo();
+  // 3) ไม่รองรับเลย → แนะนำทางเลือก
+  alert(
+    'เบราว์เซอร์นี้ลอยจอแบบลอยทับแอปอื่นไม่ได้\n\n' +
+    '• iPhone/iPad: เปิดด้วย Safari แล้วลองใหม่ (ใช้ Video PiP) หรือ\n' +
+    '  iPad: ใช้ Split View/Slide Over วางหน้านี้คู่กับแอปอื่น\n' +
+    '• คอม: ใช้ Chrome หรือ Edge เวอร์ชันใหม่\n' +
+    '• เพิ่มลงหน้าโฮม (Add to Home Screen) เพื่อใช้เป็นแอปเต็มจอ'
+  );
+}
+
+// ---------- (1) Document PiP : คอม ----------
+async function popOutDocument() {
   if (pipWindow && !pipWindow.closed) { pipWindow.focus(); return; }
 
   pipWindow = await window.documentPictureInPicture.requestWindow({
@@ -277,6 +304,96 @@ async function popOut() {
     document.getElementById('pip-note').hidden = true;
     pipWindow = null;
   });
+}
+
+// ---------- (2) Video PiP : มือถือ/iPad ----------
+function canUseVideoPip() {
+  const v = document.createElement('video');
+  return !!(
+    ('pictureInPictureEnabled' in document && document.pictureInPictureEnabled) ||
+    typeof v.webkitSetPresentationMode === 'function'  // iOS Safari
+  );
+}
+
+function buildPipVideo() {
+  pipCanvas = document.createElement('canvas');
+  pipCanvas.width = 640;
+  pipCanvas.height = 360;
+
+  pipVideo = document.createElement('video');
+  pipVideo.muted = true;
+  pipVideo.defaultMuted = true;
+  pipVideo.playsInline = true;
+  pipVideo.setAttribute('playsinline', '');
+  pipVideo.setAttribute('autoplay', '');
+  // ซ่อนนอกจอ (ต้องอยู่ใน DOM และมีขนาด ไม่งั้น iOS ไม่เล่น)
+  pipVideo.style.cssText = 'position:fixed;width:1px;height:1px;opacity:0;left:-10px;top:-10px;pointer-events:none;';
+  document.body.appendChild(pipVideo);
+
+  pipVideo.addEventListener('leavepictureinpicture', stopPipDraw);
+  pipVideo.addEventListener('webkitendfullscreen', stopPipDraw);
+}
+
+function drawPipFrame() {
+  const ctx = pipCanvas.getContext('2d');
+  const W = pipCanvas.width, H = pipCanvas.height;
+  const flash = pipFlashOn;
+
+  // พื้นหลัง (กระพริบแดงตอนเตือน)
+  ctx.fillStyle = flash ? '#F04438' : '#FFFFFF';
+  ctx.fillRect(0, 0, W, H);
+
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  // เวลา
+  ctx.fillStyle = flash ? '#FFFFFF' : '#111827';
+  ctx.font = "700 150px Inter, 'Segoe UI', system-ui, sans-serif";
+  const timerStr = getTimerStr();
+  const hasSub = state.showDate || timerStr;
+  ctx.fillText(getTimeStr(), W / 2, hasSub ? H / 2 - 30 : H / 2);
+
+  // บรรทัดล่าง: วันที่ + ตัวจับเวลา
+  const sub = [getDateStr(), timerStr ? '⏱ ' + timerStr : ''].filter(Boolean).join('   ');
+  if (sub) {
+    ctx.fillStyle = flash ? '#FFE4E1' : '#98A2B3';
+    ctx.font = "500 40px Inter, 'Segoe UI', system-ui, sans-serif";
+    ctx.fillText(sub, W / 2, H / 2 + 95);
+  }
+}
+
+function startPipDraw() {
+  if (pipDrawTimer) return;
+  drawPipFrame();
+  pipDrawTimer = setInterval(drawPipFrame, 250);
+}
+
+function stopPipDraw() {
+  if (pipDrawTimer) { clearInterval(pipDrawTimer); pipDrawTimer = null; }
+}
+
+async function popOutVideo() {
+  if (!pipVideo) buildPipVideo();
+  if (!pipStream) {
+    pipStream = pipCanvas.captureStream(4);   // 4fps พอสำหรับนาฬิกา
+    pipVideo.srcObject = pipStream;
+  }
+  startPipDraw();
+  try { await pipVideo.play(); } catch { /* iOS อาจ resolve ช้า */ }
+
+  try {
+    if (pipVideo.requestPictureInPicture && document.pictureInPictureEnabled) {
+      await pipVideo.requestPictureInPicture();
+    } else if (typeof pipVideo.webkitSetPresentationMode === 'function') {
+      pipVideo.webkitSetPresentationMode('picture-in-picture');   // iOS Safari
+    } else {
+      throw new Error('ไม่รองรับ video PiP');
+    }
+  } catch (e) {
+    stopPipDraw();
+    alert('เปิดโหมดลอยจอไม่สำเร็จ: ' + (e && e.message ? e.message : e) +
+      '\n\nลองอีกครั้ง หรือบน iPad ใช้ Split View/Slide Over แทน');
+  }
 }
 
 // ============================================================
