@@ -240,9 +240,19 @@ function clampSecs(v) {
 
 function syncTimerButtons() {
   const t = state.timer;
+  const idle = t.totalMs <= 0 || t.remainingMs <= 0;
+
   const pauseBtn = document.getElementById('pause-btn');
-  pauseBtn.disabled = t.totalMs <= 0 || t.remainingMs <= 0;
+  pauseBtn.disabled = idle;
   pauseBtn.textContent = t.running ? 'หยุดชั่วคราว' : 'เล่นต่อ';
+
+  // ปุ่มควบคุมในหน้าต่างลอย (PiP)
+  const pipPause = q('#pip-pause');
+  if (pipPause) {
+    pipPause.disabled = idle;
+    pipPause.textContent = t.running ? '⏸' : '▶';
+    pipPause.title = t.running ? 'หยุด' : 'เล่นต่อ';
+  }
 }
 
 // ============================================================
@@ -444,10 +454,15 @@ function initUI() {
   minsInput.addEventListener('input', () => { state.minutes = clampMins(+minsInput.value); highlightPreset(); });
   secsInput.addEventListener('input', () => { state.seconds = clampSecs(+secsInput.value); highlightPreset(); });
 
-  // ปุ่ม timer
+  // ปุ่ม timer (หน้าหลัก)
   document.getElementById('start-btn').addEventListener('click', startTimer);
   document.getElementById('pause-btn').addEventListener('click', pauseTimer);
   document.getElementById('reset-btn').addEventListener('click', () => stopTimer(false));
+
+  // ปุ่ม timer (ในหน้าต่างลอย PiP) — ใช้ฟังก์ชันเดียวกัน
+  q('#pip-start').addEventListener('click', startTimer);
+  q('#pip-pause').addEventListener('click', pauseTimer);
+  q('#pip-reset').addEventListener('click', () => stopTimer(false));
 
   // PiP
   document.getElementById('pop-btn').addEventListener('click', popOut);

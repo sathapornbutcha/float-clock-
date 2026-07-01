@@ -120,3 +120,22 @@ body.pip-body .overlay {
 }
 body.pip-body .clock { font-size: clamp(40px, 20vw, 120px); }
 body.pip-body .date  { font-size: clamp(12px, 4vw, 18px); }
+
+/* ---------- ปุ่มควบคุมในหน้าต่างลอย ---------- */
+.pip-controls { display: none; gap: 8px; margin-top: 8px; }
+body.pip-body .pip-controls { display: flex; }   /* โชว์เฉพาะตอนลอยจอ */
+.pip-btn {
+  font-family: var(--font);
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text-primary);
+  border-radius: var(--radius-md);
+  min-width: 44px; height: 40px; padding: 0 12px;
+  font-size: 18px; line-height: 1; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: background .15s, border-color .15s;
+}
+.pip-btn:hover { background: var(--field-hover); }
+.pip-btn.primary { background: var(--primary); color: #fff; border: none; }
+.pip-btn.primary:hover { background: var(--primary-hover); }
+.pip-btn:disabled { opacity: .4; cursor: default; }

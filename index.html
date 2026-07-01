@@ -4,8 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Float Clock — นาฬิกาลอยจอ + ตัวเตือน</title>
-  <link rel="stylesheet" href="tokens.css?v=3" />
-  <link rel="stylesheet" href="style.css?v=3" />
+  <link rel="stylesheet" href="tokens.css?v=4" />
+  <link rel="stylesheet" href="style.css?v=4" />
 </head>
 <body>
   <main class="page">
@@ -23,6 +23,12 @@
           <span class="timer-chip" id="timer-chip" hidden>
             <span class="dot"></span><span id="timer-remain">00:00</span>
           </span>
+        </div>
+        <!-- ปุ่มควบคุมในหน้าต่างลอย (โชว์เฉพาะโหมด PiP) -->
+        <div class="pip-controls">
+          <button class="pip-btn primary" id="pip-start" title="เริ่ม / เริ่มใหม่">▶</button>
+          <button class="pip-btn" id="pip-pause" title="หยุด / เล่นต่อ">⏸</button>
+          <button class="pip-btn" id="pip-reset" title="รีเซ็ต">↺</button>
         </div>
       </div>
     </section>
@@ -79,6 +85,6 @@
     <p class="caption foot">💻 คอม (Chrome/Edge): เกมตั้ง <b>Borderless / Windowed</b> เพื่อให้ลอยทับได้<br>📱 iPhone/iPad: เปิดด้วย <b>Safari</b> แล้วกด "ลอยจอ" (ใช้ Video PiP ลอยทับแอปอื่นได้)</p>
   </main>
 
-  <script src="app.js?v=3"></script>
+  <script src="app.js?v=4"></script>
 </body>
 </html>
